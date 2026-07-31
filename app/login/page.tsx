@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -64,6 +65,12 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-6">
       <div className="mx-auto max-w-md rounded-xl bg-white p-6 shadow">
+        <Link
+  href="/"
+  className="mb-4 inline-block text-blue-500 hover:underline"
+>
+  ← 목록으로
+</Link>
         <h1 className="text-2xl font-bold">로그인 / 회원가입</h1>
 
         <input
