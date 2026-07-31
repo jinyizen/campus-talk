@@ -5,12 +5,16 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import AuthButton from "./components/AuthButton";
 
+type Category = "자유" | "정보" | "질문" | "비밀";
+type SelectedCategory = "전체" | Category;
+
 type Post = {
   id: number;
   title: string;
   content: string;
   user_id: string;
   created_at: string;
+  category: Category;
 };
 
 type Profile = {
@@ -18,20 +22,35 @@ type Profile = {
   nickname: string;
 };
 
+const categories: SelectedCategory[] = [
+  "전체",
+  "자유",
+  "정보",
+  "질문",
+  "비밀",
+];
+
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
+
   const [nicknameMap, setNicknameMap] = useState<Map<string, string>>(
     new Map()
   );
+
   const [likeCountMap, setLikeCountMap] = useState<Map<number, number>>(
     new Map()
   );
+
   const [commentCountMap, setCommentCountMap] = useState<Map<number, number>>(
     new Map()
   );
 
   const [searchKeyword, setSearchKeyword] = useState("");
   const [sortType, setSortType] = useState<"latest" | "popular">("latest");
+
+  const [selectedCategory, setSelectedCategory] =
+    useState<SelectedCategory>("전체");
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -128,6 +147,14 @@ export default function Home() {
     const keyword = searchKeyword.trim().toLowerCase();
 
     const searchedPosts = posts.filter((post) => {
+      const matchesCategory =
+        selectedCategory === "전체" ||
+        post.category === selectedCategory;
+
+      if (!matchesCategory) {
+        return false;
+      }
+
       if (!keyword) {
         return true;
       }
@@ -143,7 +170,9 @@ export default function Home() {
         const aLikes = likeCountMap.get(a.id) ?? 0;
         const bLikes = likeCountMap.get(b.id) ?? 0;
 
-        return bLikes - aLikes;
+        if (aLikes !== bLikes) {
+          return bLikes - aLikes;
+        }
       }
 
       return (
@@ -151,9 +180,16 @@ export default function Home() {
         new Date(a.created_at).getTime()
       );
     });
-  }, [posts, searchKeyword, sortType, likeCountMap]);
+  }, [
+    posts,
+    searchKeyword,
+    sortType,
+    selectedCategory,
+    likeCountMap,
+  ]);
 
-  return (    <main className="min-h-screen bg-gray-100 p-6">
+  return (
+    <main className="min-h-screen bg-gray-100 p-6">
       <div className="mx-auto max-w-md">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold">예진이네 농장</h1>
@@ -196,6 +232,23 @@ export default function Home() {
           </button>
         </div>
 
+        <div className="mb-4 flex gap-2 overflow-x-auto">
+          {categories.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setSelectedCategory(category)}
+              className={`shrink-0 rounded-full px-4 py-2 text-sm ${
+                selectedCategory === category
+                  ? "bg-blue-500 text-white"
+                  : "bg-white text-gray-600"
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
         <Link
           href="/write"
           className="mb-6 block w-full rounded-xl bg-blue-500 py-3 text-center text-white"
@@ -211,7 +264,7 @@ export default function Home() {
 
         {!loading && filteredPosts.length === 0 && (
           <p className="rounded-xl bg-white py-10 text-center text-gray-500">
-            검색 결과가 없습니다.
+            게시글이 없습니다.
           </p>
         )}
 
@@ -223,9 +276,17 @@ export default function Home() {
               className="block rounded-lg border bg-white p-4 hover:bg-gray-50"
             >
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-semibold text-gray-700">
-                  {nicknameMap.get(post.user_id) ?? "익명"}
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
+                    {post.category ?? "자유"}
+                  </span>
+
+                  <p className="text-sm font-semibold text-gray-700">
+                    {post.category === "비밀"
+                      ? "익명"
+                      : nicknameMap.get(post.user_id) ?? "익명"}
+                  </p>
+                </div>
 
                 <p className="text-xs text-gray-400">
                   {new Date(post.created_at).toLocaleString("ko-KR")}

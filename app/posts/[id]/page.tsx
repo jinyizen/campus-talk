@@ -1,6 +1,7 @@
 import EditButton from "./EditButton";
 import CommentForm from "./CommentForm";
 import DeleteButton from "./DeleteButton";
+import CommentDeleteButton from "./CommentDeleteButton";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -27,9 +28,11 @@ export default async function PostPage({
     notFound();
   }
 
+  const isSecretPost = post.category === "비밀";
+
   let nickname = "익명";
 
-  if (post.user_id) {
+  if (!isSecretPost && post.user_id) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("nickname")
@@ -61,7 +64,7 @@ export default async function PostPage({
 
   const commentNicknameMap = new Map<string, string>();
 
-  if (commentUserIds.length > 0) {
+  if (!isSecretPost && commentUserIds.length > 0) {
     const { data: commentProfiles } = await supabase
       .from("profiles")
       .select("id, nickname")
@@ -72,6 +75,28 @@ export default async function PostPage({
     });
   }
 
+  const anonymousNumberMap = new Map<string, number>();
+  let nextAnonymousNumber = 1;
+
+  comments?.forEach((comment) => {
+    if (!comment.user_id) {
+      return;
+    }
+
+    if (comment.user_id === post.user_id) {
+      return;
+    }
+
+    if (!anonymousNumberMap.has(comment.user_id)) {
+      anonymousNumberMap.set(
+        comment.user_id,
+        nextAnonymousNumber
+      );
+
+      nextAnonymousNumber += 1;
+    }
+  });
+
   return (
     <main className="min-h-screen bg-gray-100 p-6">
       <div className="mx-auto max-w-2xl">
@@ -80,11 +105,19 @@ export default async function PostPage({
         </Link>
 
         <article className="mt-4 rounded-xl bg-white p-6 shadow">
-          <h1 className="text-2xl font-bold">{post.title}</h1>
+          <div className="mb-3 flex items-center gap-2">
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600">
+              {post.category ?? "자유"}
+            </span>
+          </div>
+
+          <h1 className="text-2xl font-bold">
+            {post.title}
+          </h1>
 
           <div className="mt-2 flex items-center justify-between">
             <p className="text-sm font-semibold text-gray-700">
-              {nickname}
+              {isSecretPost ? "익명" : nickname}
             </p>
 
             <p className="text-sm text-gray-400">
@@ -106,38 +139,73 @@ export default async function PostPage({
 
           <hr className="my-4" />
 
-          <p className="whitespace-pre-wrap">{post.content}</p>
+          <p className="whitespace-pre-wrap">
+            {post.content}
+          </p>
+
           <div className="mt-6">
-  <LikeButton postId={post.id} />
-</div>
+            <LikeButton postId={post.id} />
+          </div>
 
           <div className="mt-8">
-            <h2 className="text-lg font-bold">댓글</h2>
+            <h2 className="text-lg font-bold">
+              댓글
+            </h2>
 
             <div className="mt-4 space-y-3">
               {comments && comments.length > 0 ? (
-                comments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className="rounded-lg border border-gray-200 p-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-gray-700">
-                        {comment.user_id
-                          ? commentNicknameMap.get(comment.user_id) ?? "익명"
-                          : "익명"}
-                      </p>
+                comments.map((comment) => {
+                  let commentNickname = "익명";
 
-                      <p className="text-xs text-gray-400">
-                        {new Date(comment.created_at).toLocaleString("ko-KR")}
-                      </p>
+                  if (isSecretPost) {
+                    if (comment.user_id === post.user_id) {
+                      commentNickname = "글쓴이";
+                    } else if (comment.user_id) {
+                      const anonymousNumber =
+                        anonymousNumberMap.get(comment.user_id);
+
+                      commentNickname = anonymousNumber
+                        ? `익명${anonymousNumber}`
+                        : "익명";
+                    }
+                  } else if (comment.user_id) {
+                    commentNickname =
+                      commentNicknameMap.get(comment.user_id) ??
+                      "익명";
+                  }
+
+                  return (
+                    <div
+                      key={comment.id}
+                      className="rounded-lg border border-gray-200 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-gray-700">
+                            {commentNickname}
+                          </p>
+
+                          <p className="mt-2 whitespace-pre-wrap break-words">
+                            {comment.content}
+                          </p>
+                        </div>
+
+                        <div className="flex shrink-0 flex-col items-end gap-2">
+                          <p className="text-xs text-gray-400">
+                            {new Date(
+                              comment.created_at
+                            ).toLocaleString("ko-KR")}
+                          </p>
+
+                          <CommentDeleteButton
+                            commentId={comment.id}
+                            authorId={comment.user_id}
+                          />
+                        </div>
+                      </div>
                     </div>
-
-                    <p className="mt-2 whitespace-pre-wrap">
-                      {comment.content}
-                    </p>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-sm text-gray-400">
                   아직 댓글이 없습니다.

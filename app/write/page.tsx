@@ -80,9 +80,9 @@ export default function WritePage() {
             className="mb-4 w-full rounded-lg border bg-white p-3"
           >
             <option value="자유">자유</option>
-            <option value="12시">12시</option>
-            <option value="3시">3시</option>
-            <option value="6시">6시</option>
+            <option value="질문">질문</option>
+            <option value="정보">정보</option>
+            <option value="비밀">비밀</option>
           </select>
 
           <input
