@@ -11,18 +11,40 @@ export default async function Home() {
   if (error) {
     console.error("게시글 불러오기 오류:", error);
   }
-  const { data: likes } = await supabase
-  .from("post_likes")
-  .select("post_id");
 
-const likeCountMap = new Map<number, number>();
+  const { data: likes, error: likesError } = await supabase
+    .from("post_likes")
+    .select("post_id");
 
-likes?.forEach((like) => {
-  likeCountMap.set(
-    like.post_id,
-    (likeCountMap.get(like.post_id) ?? 0) + 1
-  );
-});
+  if (likesError) {
+    console.error("좋아요 불러오기 오류:", likesError);
+  }
+
+  const likeCountMap = new Map<number, number>();
+
+  likes?.forEach((like) => {
+    likeCountMap.set(
+      like.post_id,
+      (likeCountMap.get(like.post_id) ?? 0) + 1
+    );
+  });
+
+  const { data: comments, error: commentsError } = await supabase
+    .from("comments")
+    .select("post_id");
+
+  if (commentsError) {
+    console.error("댓글 불러오기 오류:", commentsError);
+  }
+
+  const commentCountMap = new Map<number, number>();
+
+  comments?.forEach((comment) => {
+    commentCountMap.set(
+      comment.post_id,
+      (commentCountMap.get(comment.post_id) ?? 0) + 1
+    );
+  });
 
   const userIds = [
     ...new Set(
@@ -56,7 +78,6 @@ likes?.forEach((like) => {
       <div className="mx-auto max-w-md">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold">예진이네 농장</h1>
-
           <AuthButton />
         </div>
 
@@ -89,11 +110,11 @@ likes?.forEach((like) => {
               <p className="mt-2 line-clamp-2 text-gray-600">
                 {post.content}
               </p>
-              <div className="mt-3 flex justify-end">
-  <span className="text-sm text-gray-500">
-    ❤️ {likeCountMap.get(post.id) ?? 0}
-  </span>
-</div>
+
+              <div className="mt-3 flex justify-end gap-4 text-sm text-gray-500">
+                <span>❤️ {likeCountMap.get(post.id) ?? 0}</span>
+                <span>💬 {commentCountMap.get(post.id) ?? 0}</span>
+              </div>
             </Link>
           ))}
         </div>
