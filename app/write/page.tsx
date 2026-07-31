@@ -8,12 +8,20 @@ export default function WritePage() {
   const [content, setContent] = useState("");
 
   async function handleSubmit() {
-    const { error } = await supabase
-      .from("posts")
-      .insert({
-        title: title,
-        content: content,
-      });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    const { error } = await supabase.from("posts").insert({
+  title: title,
+  content: content,
+  user_id: user.id,
+});
 
     if (error) {
       alert("저장 실패!");
@@ -28,23 +36,19 @@ export default function WritePage() {
 
   return (
     <main className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-md mx-auto">
+      <div className="mx-auto max-w-md">
+        <h1 className="mb-8 text-3xl font-bold">✏️ 글쓰기</h1>
 
-        <h1 className="text-3xl font-bold mb-8">
-          ✏️ 글쓰기
-        </h1>
-
-        <div className="bg-white rounded-xl p-4 shadow">
-
+        <div className="rounded-xl bg-white p-4 shadow">
           <input
-            className="w-full border p-3 rounded-lg mb-4"
+            className="mb-4 w-full rounded-lg border p-3"
             placeholder="제목을 입력하세요"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
 
           <textarea
-            className="w-full border p-3 rounded-lg h-40"
+            className="h-40 w-full rounded-lg border p-3"
             placeholder="무슨 일이 있었나요?"
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -52,13 +56,11 @@ export default function WritePage() {
 
           <button
             onClick={handleSubmit}
-            className="w-full bg-blue-500 text-white py-3 rounded-xl mt-4"
+            className="mt-4 w-full rounded-xl bg-blue-500 py-3 text-white"
           >
             작성하기
           </button>
-
         </div>
-
       </div>
     </main>
   );
