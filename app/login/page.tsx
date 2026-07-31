@@ -4,13 +4,14 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
+  const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSignUp() {
-    if (!email || !password) {
-      alert("이메일과 비밀번호를 입력해 주세요.");
+    if (!nickname || !email || !password) {
+      alert("닉네임, 이메일, 비밀번호를 모두 입력해 주세요.");
       return;
     }
 
@@ -19,6 +20,11 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          nickname,
+        },
+      },
     });
 
     setLoading(false);
@@ -28,7 +34,7 @@ export default function LoginPage() {
       return;
     }
 
-    alert("회원가입이 완료되었습니다.");
+    alert("회원가입이 완료되었습니다. 이메일 인증 후 로그인해 주세요.");
   }
 
   async function handleLogin() {
@@ -58,12 +64,20 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-6">
       <div className="mx-auto max-w-md rounded-xl bg-white p-6 shadow">
-        <h1 className="text-2xl font-bold">로그인</h1>
+        <h1 className="text-2xl font-bold">로그인 / 회원가입</h1>
+
+        <input
+          type="text"
+          placeholder="닉네임 (회원가입할 때만 입력)"
+          className="mt-6 w-full rounded-lg border p-3"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+        />
 
         <input
           type="email"
           placeholder="이메일"
-          className="mt-6 w-full rounded-lg border p-3"
+          className="mt-3 w-full rounded-lg border p-3"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -77,19 +91,21 @@ export default function LoginPage() {
         />
 
         <button
+          type="button"
           onClick={handleLogin}
           disabled={loading}
           className="mt-4 w-full rounded-lg bg-blue-500 py-3 text-white disabled:opacity-50"
         >
-          로그인
+          {loading ? "처리 중..." : "로그인"}
         </button>
 
         <button
+          type="button"
           onClick={handleSignUp}
           disabled={loading}
           className="mt-3 w-full rounded-lg border py-3 disabled:opacity-50"
         >
-          회원가입
+          {loading ? "처리 중..." : "회원가입"}
         </button>
       </div>
     </main>
