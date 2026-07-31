@@ -9,21 +9,41 @@ export default async function Home() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Supabase 오류:", {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-    });
+    console.error("게시글 불러오기 오류:", error);
   }
+
+  const userIds = [
+    ...new Set(
+      (posts ?? [])
+        .map((post) => post.user_id)
+        .filter((userId) => userId)
+    ),
+  ];
+
+  let profiles: { id: string; nickname: string }[] = [];
+
+  if (userIds.length > 0) {
+    const { data, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, nickname")
+      .in("id", userIds);
+
+    if (profileError) {
+      console.error("프로필 불러오기 오류:", profileError);
+    }
+
+    profiles = data ?? [];
+  }
+
+  const nicknameMap = new Map(
+    profiles.map((profile) => [profile.id, profile.nickname])
+  );
 
   return (
     <main className="min-h-screen bg-gray-100 p-6">
       <div className="mx-auto max-w-md">
         <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">
-            예진이네 농장
-          </h1>
+          <h1 className="text-3xl font-bold">예진이네 농장</h1>
 
           <AuthButton />
         </div>
@@ -42,16 +62,20 @@ export default async function Home() {
               href={`/posts/${post.id}`}
               className="block rounded-lg border bg-white p-4 hover:bg-gray-50"
             >
-              <h2 className="text-lg font-bold">
-                {post.title}
-              </h2>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-sm font-semibold text-gray-700">
+                  {nicknameMap.get(post.user_id) ?? "익명"}
+                </p>
+
+                <p className="text-xs text-gray-400">
+                  {new Date(post.created_at).toLocaleString("ko-KR")}
+                </p>
+              </div>
+
+              <h2 className="text-lg font-bold">{post.title}</h2>
 
               <p className="mt-2 line-clamp-2 text-gray-600">
                 {post.content}
-              </p>
-
-              <p className="mt-3 text-sm text-gray-400">
-                {new Date(post.created_at).toLocaleString("ko-KR")}
               </p>
             </Link>
           ))}
