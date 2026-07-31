@@ -1,3 +1,4 @@
+import CommentForm from "./CommentForm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -18,6 +19,12 @@ export default async function PostPage({
     .select("*")
     .eq("id", id)
     .single();
+
+  const { data: comments } = await supabase
+    .from("comments")
+    .select("*")
+    .eq("post_id", id)
+    .order("created_at", { ascending: true });
 
   if (error || !post) {
     notFound();
@@ -40,6 +47,35 @@ export default async function PostPage({
           <hr className="my-4" />
 
           <p className="whitespace-pre-wrap">{post.content}</p>
+
+          <div className="mt-8">
+            <h2 className="text-lg font-bold">댓글</h2>
+
+            <div className="mt-4 space-y-3">
+              {comments && comments.length > 0 ? (
+                comments.map((comment) => (
+                  <div
+                    key={comment.id}
+                    className="rounded-lg border border-gray-200 p-4"
+                  >
+                    <p className="whitespace-pre-wrap">
+                      {comment.content}
+                    </p>
+
+                    <p className="mt-2 text-xs text-gray-400">
+                      {new Date(comment.created_at).toLocaleString("ko-KR")}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-400">
+                  아직 댓글이 없습니다.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <CommentForm postId={post.id} />
         </article>
       </div>
     </main>
