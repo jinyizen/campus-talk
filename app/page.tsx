@@ -30,16 +30,22 @@ if (error) {
         </Link>
 
         {posts?.map((post) => (
-          <Link key={post.id} href={`/posts/${post.id}`}>
-            <div className="bg-white rounded-xl p-4 shadow mb-4 cursor-pointer">
-              <h2 className="font-bold text-lg">{post.title}</h2>
+  <Link
+    key={post.id}
+    href={`/posts/${post.id}`}
+    className="block rounded-lg border p-4 hover:bg-gray-50"
+  >
+    <h2 className="text-lg font-bold">{post.title}</h2>
 
-              <p className="text-gray-500 mt-2">{post.content}</p>
+    <p className="mt-2 line-clamp-2 text-gray-600">
+      {post.content}
+    </p>
 
-              <p className="mt-3">💬 댓글 0개</p>
-            </div>
-          </Link>
-        ))}
+    <p className="mt-3 text-sm text-gray-400">
+      {new Date(post.created_at).toLocaleString("ko-KR")}
+    </p>
+  </Link>
+))}
 
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-around">
           <span>🏠 홈</span>
