@@ -4,6 +4,7 @@ import DeleteButton from "./DeleteButton";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import LikeButton from "./LikeButton";
 
 type PostPageProps = {
   params: Promise<{
@@ -106,6 +107,9 @@ export default async function PostPage({
           <hr className="my-4" />
 
           <p className="whitespace-pre-wrap">{post.content}</p>
+          <div className="mt-6">
+  <LikeButton postId={post.id} />
+</div>
 
           <div className="mt-8">
             <h2 className="text-lg font-bold">댓글</h2>

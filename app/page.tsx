@@ -11,6 +11,18 @@ export default async function Home() {
   if (error) {
     console.error("게시글 불러오기 오류:", error);
   }
+  const { data: likes } = await supabase
+  .from("post_likes")
+  .select("post_id");
+
+const likeCountMap = new Map<number, number>();
+
+likes?.forEach((like) => {
+  likeCountMap.set(
+    like.post_id,
+    (likeCountMap.get(like.post_id) ?? 0) + 1
+  );
+});
 
   const userIds = [
     ...new Set(
@@ -77,6 +89,11 @@ export default async function Home() {
               <p className="mt-2 line-clamp-2 text-gray-600">
                 {post.content}
               </p>
+              <div className="mt-3 flex justify-end">
+  <span className="text-sm text-gray-500">
+    ❤️ {likeCountMap.get(post.id) ?? 0}
+  </span>
+</div>
             </Link>
           ))}
         </div>
